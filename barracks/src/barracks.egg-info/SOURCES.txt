@@ -1,0 +1,7 @@
+setup.py
+src/barracks/__init__.py
+src/barracks/app.py
+src/barracks.egg-info/PKG-INFO
+src/barracks.egg-info/SOURCES.txt
+src/barracks.egg-info/dependency_links.txt
+src/barracks.egg-info/top_level.txt

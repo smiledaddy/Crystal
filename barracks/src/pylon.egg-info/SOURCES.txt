@@ -1,0 +1,8 @@
+setup.py
+src/barracks/__init__.py
+src/barracks/app.py
+src/pylon.egg-info/PKG-INFO
+src/pylon.egg-info/SOURCES.txt
+src/pylon.egg-info/dependency_links.txt
+src/pylon.egg-info/requires.txt
+src/pylon.egg-info/top_level.txt

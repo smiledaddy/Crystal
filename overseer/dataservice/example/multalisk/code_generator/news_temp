@@ -1,0 +1,321 @@
+# -*- coding: utf-8 -*-
+
+import multalisk
+from multalisk.model import orm
+from multalisk.core.feature import ChartType
+from multalisk.utils.custom_filter import n_days_ago
+
+DEBUG = True
+APP_CONF = {
+    'model': [
+        {%- for model_id in ['001', '002', '003', '004', '005', '006'] -%}
+        {%- for prefix in ['1', '2', '3', '4'] -%}
+        {
+            'model_id': '{{ prefix ~ model_id }}',
+            'db_conn':
+                "mysql://root:P@55word@127.0.0.1:3306/news_report?charset=utf8"
+        },
+        {%- endfor -%}
+        {%- endfor -%}
+    ],
+    'view': {
+        {%- for locale in params.locales -%}
+        "{{ 'total_click_' ~ locale }}": {
+            'charts': [{
+                'model_id': "{{ loop.index ~ '002'}}",
+                'x_dimension': 'date',
+                'y_dimension': [{
+                    'name': 'total_click',
+                    'value': {
+                        'field': 'click',
+                        'func': 'sum'
+                    }
+                }],
+                'default_q': {
+                    'filters': [{
+                        'name': 'date',
+                        'op': '>=',
+                        'val': (n_days_ago, [15, '%Y-%m-%d'])
+                    }, {
+                        'name': 'type',
+                        'op': '!=',
+                        'val': 'recommand'
+                    }]
+                },
+                'chart_type': ChartType.Line
+            }],
+            'filters': {}
+        },
+        {%- endfor -%}
+        {%- for locale in params.locales -%}
+        "{{ 'click_type_ratio_' ~ locale }}": {
+            'charts': [{
+                'model_id': "{{ loop.index ~ '002' }}",
+                'x_dimension': 'type',
+                'y_dimension': [{
+                    'name': 'click_type_ratio',
+                    'value': {
+                        'field': 'click',
+                        'func': 'sum_ratio'
+                    }
+                }],
+                'default_q': {
+                    'filters': [{
+                        'name': 'type',
+                        'op': '!=',
+                        'val': 'recommand'
+                    }, {
+                        'name': 'date',
+                        'op': '==',
+                        'val': (n_days_ago, [1, '%Y-%m-%d'])
+                    }]
+                },
+                'chart_type': ChartType.Pie
+            }],
+            'filters': {
+                'multi': [{
+                    'model_id': {{loop.index ~ '002'}},
+                    'name': 'type'
+                }]
+            }
+        },
+        {%- endfor -%}
+        {%- for locale in params.locales -%}
+        "{{ 'recommend_click_' ~ locale }}": {
+            'charts': [{
+                'model_id': "{{ loop.index ~ '002' }}",
+                'x_dimension': 'date',
+                'y_dimension': [{
+                    'name': 'total_click',
+                    'value': {
+                        'field': 'click',
+                        'func': 'sum'
+                    }
+                }],
+                'default_q': {
+                    'filters': [{
+                        'name': 'date',
+                        'op': '>=',
+                        'val': (n_days_ago, [15, '%Y-%m-%d'])
+                    }, {
+                        'name': 'type',
+                        'op': '==',
+                        'val': 'recommend'
+                    }]
+                },
+                'chart_type': ChartType.Line
+            }]
+        },
+        'filters': {}
+    },
+    {%- endfor -%}
+    {%- for locale in params.locales -%}
+    {% set outer_loop = loop %}
+    "{{ 'recommend_ratio_' ~ locale }}": {
+        'charts': [
+            {%- for model_id, field in {'003': 'category', '004': 'priority', '005': 'source'}.iteritems() -%}
+            {
+                'model_id': '{{ outer_loop.index ~ model_id }}',
+                'x_dimension': '{{ field }}',
+                'y_dimension': [{
+                    'name': 'total_click',
+                    'value': {
+                        'field': 'recommend_click',
+                        'func': 'sum_ratio'
+                    }
+                }],
+                'default_q': {
+                    'filters': [{
+                        'name': 'date',
+                        'op': '==',
+                        'val': (n_days_ago, [1, '%Y-%m-%d'])
+                    }]
+                },
+                'chart_type': ChartType.Pie
+            },
+            {%- endfor -%}
+        ],
+        'filters': {
+            'multi': [{
+                'model_id': "{{ loop.index ~ '003' }}",
+                'name': 'category',
+            }, {
+                'model_id': "{{ loop.index ~ '004' }}",
+                'name': 'priority',
+            }, {
+                'model_id': "{{ loop.index ~ '005' }}",
+                'name': 'source',
+            }]
+        }
+    },
+    {%- endfor -%}
+    {%- for locale in params.locales -%}
+    "{{ 'category_click_' ~ locale }}": {
+        'charts': [{
+            'model_id': "{{ loop.index ~ '003' }}",
+            'x_dimension': 'date',
+            'y_dimension': [{
+                'name': 'total_click',
+                'value': {
+                    'field_group': 'top_click+home_click+push_click',
+                    'func': 'sum'
+                }
+            }],
+            'default_q': {
+                'filters': [{
+                    'name': 'date',
+                    'op': '>=',
+                    'val': (n_days_ago, [15, '%Y-%m-%d'])
+                }, {
+                    'name': 'category',
+                    'op': '==',
+                    'val': 1
+                }]
+            },
+            'chart_type': ChartType.Line
+        }],
+        'filters': {
+            'multi': [{
+                'model_id': "{{ loop.index ~ '003' }}",
+                'name': 'category'
+            }]
+        }
+    },
+    {%- endfor -%}
+    {%- for locale in params.locales -%}
+    "{{ 'category_source_ratio_' ~ locale }}": {
+        'charts': [{
+            'model_id': "{{ loop.index ~ '005' }}",
+            'x_dimension': 'source',
+            'y_dimension': [{
+                'name': 'source_ratio',
+                'value': {
+                    'field_group': 'top_click+home_click+push_click',
+                    'func': 'sum_ratio'
+                }
+            }],
+            'default_q': {
+                'filters': [{
+                    'name': 'date',
+                    'op': '==',
+                    'val': (n_days_ago, [1, '%Y-%m-%d'])
+                }, {
+                    'name': 'category',
+                    'op': '==',
+                    'val': 1
+                }]
+            },
+            'chart_type': ChartType.Pie
+        }],
+        'filters': {
+            'multi': [{
+                'model_id': "{{ loop.index ~ '005' }}",
+                'name': 'source'
+            }]
+        }
+    },
+    {%- endfor -%}
+}
+
+app = multalisk.Multalisk(__name__)
+app.init_conf(APP_CONF, debug=DEBUG)
+
+{% for locale in params.locales %}
+class News_report_origin_{{ locale }}(object):
+    __metaclass__ = app.MetaSQL
+    __modelid__ = "{{ loop.index ~ '001' }}"
+    __tablename__ = "{{ 'report_origin_' ~ locale }}"
+    news_id = orm.Column(orm.Integer, primary_key=True)
+    category = orm.Column(orm.Integer)
+    priority = orm.Column(orm.Integer)
+    source = orm.Column(orm.VARCHAR(128))
+    top_click = orm.Column(orm.Integer)
+    recommend_click = orm.Column(orm.Integer)
+    home_click = orm.Column(orm.Integer)
+    push_click = orm.Column(orm.Integer)
+    top_show = orm.Column(orm.Integer)
+    recommend_show = orm.Column(orm.Integer)
+    home_show = orm.Column(orm.Integer)
+    push_show = orm.Column(orm.Integer)
+    date = orm.Column(orm.VARCHAR(30), primary_key=True)
+{% endfor %}
+{% for locale in params.locales %}
+class News_report_type_{{ locale }}(object):
+    __metaclass__ = app.MetaSQL
+    __modelid__ = '{{ loop.index ~ "002" }}'
+    __tablename__ = "{{ 'report_type_sum_' ~ locale }}"
+    type = orm.Column(orm.VARCHAR(32), primary_key=True)
+    click = orm.Column(orm.Integer)
+    show = orm.Column(orm.Integer)
+    date = orm.Column(orm.VARCHAR(30), primary_key=True)
+{% endfor %}
+{% for locale in params.locales %}
+class News_report_category_{{ locale }}(object):
+    __metaclass__ = app.MetaSQL
+    __modelid__ = '{{ loop.index ~ "003" }}'
+    __tablename__ = '{{ "report_category_sum_" ~ locale }}'
+    category = orm.Column(orm.Integer, primary_key=True)
+    top_click = orm.Column(orm.Integer)
+    top_show = orm.Column(orm.Integer)
+    recommend_click = orm.Column(orm.Integer)
+    recommend_show = orm.Column(orm.Integer)
+    home_click = orm.Column(orm.Integer)
+    home_show = orm.Column(orm.Integer)
+    push_click = orm.Column(orm.Integer)
+    push_show = orm.Column(orm.Integer)
+    date = orm.Column(orm.VARCHAR(30), primary_key=True)
+{% endfor %}
+{% for locale in params.locales %}
+class News_report_priority_{{ locale }}(object):
+    __metaclass__ = app.MetaSQL
+    __modelid__ = '{{ loop.index ~ "004" }}'
+    __tablename__ = '{{ "report_priority_sum_" ~ locale }}'
+    priority = orm.Column(orm.Integer, primary_key=True)
+    top_click = orm.Column(orm.Integer)
+    top_show = orm.Column(orm.Integer)
+    recommend_click = orm.Column(orm.Integer)
+    recommend_show = orm.Column(orm.Integer)
+    home_click = orm.Column(orm.Integer)
+    home_show = orm.Column(orm.Integer)
+    push_click = orm.Column(orm.Integer)
+    push_show = orm.Column(orm.Integer)
+    date = orm.Column(orm.VARCHAR(30), primary_key=True)
+{% endfor %}
+{% for locale in params.locales %}
+class News_report_source_{{ locale }}(object):
+    __metaclass__ = app.MetaSQL
+    __modelid__ = '{{ loop.index ~ "005" }}'
+    __tablename__ = '{{ "report_source_sum_" ~ locale }}'
+    source = orm.Column(orm.VARCHAR(128), primary_key=True)
+    category = orm.Column(orm.Integer)
+    top_click = orm.Column(orm.Integer)
+    top_show = orm.Column(orm.Integer)
+    recommend_click = orm.Column(orm.Integer)
+    recommend_show = orm.Column(orm.Integer)
+    home_click = orm.Column(orm.Integer)
+    home_show = orm.Column(orm.Integer)
+    push_click = orm.Column(orm.Integer)
+    push_show = orm.Column(orm.Integer)
+    date = orm.Column(orm.VARCHAR(30), primary_key=True)
+{% endfor %}
+{% for locale in params.locales %}
+class News_report_news_{{ locale }}(object):
+    __metaclass__ = app.MetaSQL
+    __modelid__ = '{{ loop.index ~ "006" }}'
+    __tablename__ = '{{ "report_news_sum_" ~ locale }}'
+    news_id = orm.Column(orm.Integer, primary_key=True)
+    category = orm.Column(orm.Integer)
+    priority = orm.Column(orm.Integer)
+    source = orm.Column(orm.VARCHAR(128))
+    top_click = orm.Column(orm.Integer)
+    recommend_click = orm.Column(orm.Integer)
+    home_click = orm.Column(orm.Integer)
+    push_click = orm.Column(orm.Integer)
+    top_show = orm.Column(orm.Integer)
+    recommend_show = orm.Column(orm.Integer)
+    home_show = orm.Column(orm.Integer)
+    push_show = orm.Column(orm.Integer)
+    total_click = orm.Column(orm.Integer)
+    total_show = orm.Column(orm.Integer)
+    date = orm.Column(orm.VARCHAR(30), primary_key=True)
+{% endfor %}
